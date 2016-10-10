@@ -64,8 +64,8 @@ not just the author.
 
 According to this first feedback, a draft RiGolo will be proposed as a
 pull request on the `golo-lang/rigolo` repository. This draft must take
-the form of a new file in the `RiGolo` directory, with the format and
-style described link:#rigolo-formats-and-structure[bellow], and a “Draft”
+the form of a new file in the `RiGolo` directory, in its own branch,
+with the format and style described link:#rigolo-formats-and-structure[bellow], and a “Draft”
 status.
 
 === RiGolo Review & Resolution
@@ -77,7 +77,7 @@ with the feedback from discussions and reviews.
 
 If no consensus can be reach, the BDFL will decide.
 
-When the draft reaches a satisfactory state, a RiGolo number is given
+When the draft reaches a satisfactory state, a RiGolo number is given, the status changed to “Accepted”
 and the pull request can be merged. For a RiGolo to be accepted it must
 be a clear and complete description of the proposed improvement. It must
 moreover comply with the Golo philosophy, which is whatever is
@@ -87,9 +87,12 @@ A RiGolo can also be “Rejected”, and the pull request closed. Perhaps
 after all is said and done it was not a good idea. It is still important
 to have a record of this fact.
 
+
 == RiGolo Formats and Structure
 
-A RiGolo is a file in the http://powerman.name/doc/asciidoc[asciidoc] format. Each RiGolo should have the following parts:
+A RiGolo is a file in the http://powerman.name/doc/asciidoc[asciidoc] format. Only this “rich text” format is allowed for consistency, 
+since it has more features and is a more manageable format than current alternatives.
+Each RiGolo should have the following parts:
 
 * Preamble: definition list containing meta-data, including the RiGolo number, a short descriptive title, the names, and optionally the contact info for each author, etc.
 
