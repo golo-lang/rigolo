@@ -83,9 +83,9 @@ be a clear and complete description of the proposed improvement. It must
 moreover comply with the Golo philosophy, which is whatever is
 acceptable by the BDFL.
 
-A RiGolo can also be “Rejected”, and the pull request closed. Perhaps
-after all is said and done it was not a good idea. It is still important
-to have a record of this fact.
+A RiGolo can also be “Rejected”. Perhaps after all is said and done it was not a good idea. It is still important
+to have a record of this fact. The document is thus given a “Rejected” status, and the pull request is merge, to keep the information discussed.
+A section __must__ be added to explain why the proposal was rejected.
 
 
 == RiGolo Formats and Structure
