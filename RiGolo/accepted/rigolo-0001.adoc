@@ -3,7 +3,7 @@
 RiGolo:: 1
 Title:: RiGolo Purpose and Guidelines
 Author:: Yannick Loiseau
-Status:: Draft
+Status:: Accepted
 Type:: Process
 Created:: 2016-10-01
 
