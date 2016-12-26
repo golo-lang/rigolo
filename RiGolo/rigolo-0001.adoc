@@ -65,8 +65,8 @@ not just the author.
 According to this first feedback, a draft RiGolo will be proposed as a
 pull request on the `golo-lang/rigolo` repository. This draft must take
 the form of a new file in the `RiGolo` directory, in its own branch,
-with the format and style described link:#rigolo-formats-and-structure[bellow], and a “Draft”
-status.
+with the format and style described <<rigolo-formats-and-structure,bellow>>,
+a `status:draft` label, and a “Draft” status keyword.
 
 === RiGolo Review & Resolution
 
@@ -77,14 +77,14 @@ with the feedback from discussions and reviews.
 
 If no consensus can be reach, the BDFL will decide.
 
-When the draft reaches a satisfactory state, a RiGolo number is given, the status changed to “Accepted”
+When the draft reaches a satisfactory state, a RiGolo number is given, the status changed to “Accepted”, the file moved into a `RiGolo/accepted` subfolder,
 and the pull request can be merged. For a RiGolo to be accepted it must
 be a clear and complete description of the proposed improvement. It must
 moreover comply with the Golo philosophy, which is whatever is
 acceptable by the BDFL.
 
 A RiGolo can also be “Rejected”. Perhaps after all is said and done it was not a good idea. It is still important
-to have a record of this fact. The document is thus given a “Rejected” status, and the pull request is merge, to keep the information discussed.
+to have a record of this fact. The document is thus given a “Rejected” status, moved into a `RiGolo/rejected` subfolder, and the pull request is merge, to keep the information discussed.
 A section __must__ be added to explain why the proposal was rejected.
 
 
@@ -98,9 +98,9 @@ Each RiGolo should have the following parts:
 
 * Abstract: a short description of the proposal.
 
-* Specification: The technical specification should describe the syntax and semantics of any new language feature. The specification should be detailed enough to allow competing, interoperable implementations.
-
 * Motivation: The motivation is critical for RiGolos that want to change the Golo language. It should clearly explain why the existing language specification is inadequate to address the problem that the RiGolo solves.
+
+* Specification: The technical specification should describe the syntax and semantics of any new language feature. The specification should be detailed enough to allow competing, interoperable implementations.
 
 * Rationale: The rationale fleshes out the specification by describing what motivated the design and why particular design decisions were made. It should describe alternate designs that were considered and related work, e.g. how the feature is supported in other languages. The rationale should provide evidence of consensus within the community and discuss important objections or concerns raised during discussion.
 
