@@ -1,0 +1,29 @@
+= Template file for RiGolo
+
+RiGolo:: NUMBER (to be assigned before merging the proposal)
+Title:: Title for this RiGolo
+Author:: The author name (and optionally email)
+Status:: Draft
+Type:: Standard | Information | Process
+Created:: Creation date
+
+== Abstract
+
+A short description of this proposal.
+
+== Motivation
+
+Explain why the existing language specification is inadequate to address the problem that this RiGolo solves.
+
+== Specification
+
+Technical specification describing the new feature. Both semantic aspects and required syntax changes must be defined.
+
+== Rationale
+
+Explain the design choices and compare with alternate designs.
+
+== Backwards Compatibility
+
+If this proposal introduces incompatibilities, they must be described here.
+
