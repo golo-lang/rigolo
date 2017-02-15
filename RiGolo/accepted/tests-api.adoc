@@ -1,0 +1,185 @@
+= API for unified tests in Golo
+
+RiGolo:: 3
+Title:: API for unified tests in Golo
+Author:: Yannick Loiseau
+Status:: Accepted
+Type:: Standard
+Created:: 2016-12-26
+
+== Abstract
+
+This document proposes a simple and unified interface specification for tests (unit, functionals) in Golo.
+
+
+== Motivation
+
+Golo currently does not have an integrated unit test framework. While it's not clear whether such a framework should be included in the standard library, a clearly defined API can help in the implementation, integration and reusing of 
+the multiple elements involved in testing a Golo program.
+
+
+== Specification
+
+The proposed API is decoupled in several independent components connected by simple standard data structures, to keep a loose coupling between them.
+These components are:
+
+* _assertion framework_ to specify the intended behavior of the system,
+* test _suite definition_ to define test functions to be run, along with a description,
+* test _runner_ that will execute the test suite and return results,
+* results _reporter_ to format the results from the runner.
+
+
+=== Test functions and Suites
+
+A _test function_ is a regular Golo function with no parameter. When run by the _runner_, it must either “pass” if the test is validated, or “fail” otherwise. The two ways to report success or failure are:
+
+* return `null` if success or throw an `AssertionError` if failure;
+* return a `gololang.error.Result`.
+
+A _test_ is a structure isomorph to a couple `[test description, test function]` (i.e. anything that can be destructured to a string description and a test function). The description can be used by the _reporter_. A Golo function will typically have several tests.
+
+A _test suite_ is a structure isomorph to a couple `[suite description, tests]` where `tests` is a collection of either the previously defined _test_ structure or a _test suite_ to allow hierarchical organisation of suites.
+
+Several frameworks can take different approaches to help the user in defining a test suite. Some possible examples are given below.
+
+=== Assertion
+
+A _test function_ is generally written using assertion helpers, such as http://hamcrest.org/[Hamcrest] or the built-in `require` function. Functions and decorators from the http://golo-lang.org/documentation/next/golodoc/gololang/Errors[`gololang.Errors`] module can help adapt both kinds of success reporting approaches. It is the responsibility of the assertion framework to generate meaningful failure messages.
+
+Assertion frameworks must be fully decoupled form the other components, to improve reusability. 
+
+=== Suites definition and Extractor
+
+A suite definition is a way to obtain a collection of suites to run. 
+An _extractor_ is a function that takes a path where to look for golo test files and returns a collection of suites. Depending of the test framework, the file selection and suites construction can take several forms. This logic is encapsulated in the _extractor_ function.
+For instance, the _suite definition_ can be made by:
+
+* using a fluent API (see for instance https://github.com/eclipse/golo-lang/pull/308[#308]),
+* extracting functions whose name follow a given pattern (as in `org.eclipse.golo.internal.testing`, see also http://docs.pytest.org/en/latest/goodpractices.html#test-discovery[py.test]),
+* tagging test functions with a `@Test` decorator or macro,
+* extracting the test code from the function documentation (see for instance python https://docs.python.org/3/library/doctest.html#module-doctest[doctest] or Rust https://doc.rust-lang.org/book/testing.html#documentation-tests[documentation tests])
+* generating test functions from specifications and data generators (aka property-based testing, see Clojure https://github.com/clojure/test.check/blob/master/README.md[test.check] and http://clojure.org/guides/spec#_testing[spec]).
+
+The test modules can be identified by, for instance:
+
+* a file named `*-test.golo`,
+* any files in a `test` subdirectory,
+* a module named `XxxTest`,
+* any golo module containing conventionally named function(s) returning the suite,
+* any mean relevant to the definition method used.
+
+Depending on the framework, this mean:
+
+. walking the hierarchical directory structure to select relevant files,
+. compiling golo modules,
+. inspecting the modules to extract the associated suite (via reflexion, generation, invoking a known method, etc.),
+. building a collection of suites
+
+All those suite definition methods must be able to be used with the same test runner and reporter, since all they do is to return a collection of suites.
+
+NOTE: Many known test frameworks allow to register methods to be executed before and after each test (a.k.a `setUp` and `tearDown`). It is the responsibility of the suite definition component to provide a way to define such methods, and to ensure that they will be correctly run, for instance by wrapping each test function under the hood. As far as the other components are concerned, a suite is just a bunch of function to run.
+
+
+=== Results
+
+A _test result_ is a structure isomorph to a couple `[test description, test result]` where `test result` is a `gololang.error.Result` instance.
+
+A _suite result_ is a structure isomorph to a couple `[suite description, test results]` where `test results` is a collection of test results.
+
+
+=== Runner
+
+A _runner_ is a function transforming a collection of suites into a collection of suite results.
+The collection of test results can be a lazy one, such that the test function is effectively evaluated only when the _reporter_ prints the result of the test, or each suite or test can be run in parallel.  
+
+
+=== Reporter
+
+A _reporter_ is a function that takes a collection of suite results, “generate” a report, and returns the number of errors that occurred. Generating a report can mean printing a status on the console or creating a bunch of JUnit compatible Xml files for instance.
+
+=== Packages
+
+Should we include one or several alternative implementations for these components in the standard library, the modules must be well organized. The following namespaces are proposed:
+
+* `gololang.testing.assertions`
+* `gololang.testing.runners`
+* `gololang.testing.reporters`
+* `gololang.testing.suites`
+
+For instance, a simple runner module could be located at `gololang.testing.runners.SimpleTestRunner`, a JUnit like reporter at `gololang.testing.reporters.JUnitXmlReporter` and a fluent suite building API at `gololang.testing.suites.DescribeIt`.
+
+Some common utilities could be provided, among others:
+
+* function to walk the tree of file looking for specific module (can take a filtering function as parameter),
+* function to ease the compilation of a golo file (since this will be done by the extractor),
+* functions to inspect a module, its name, the contained methods, and so on,
+* …
+
+
+=== Configuration and Entry Point
+
+The logic to run tests is thus the following:
+
+1. use a given _extractor_ to get a collection of suites from a bunch of golo files,
+2. use a given _runner_ to effectively execute tests in the suites,
+3. use a given _reporter_ to format the tests results.
+
+One can obviously create a script file with a `main` function to run these steps. For instance:
+
+[source,golo]
+----
+module MainTest
+
+import my.testing.MySuperSuiteExtractor
+import other.testing.framework.ThePrettyReporter
+import someone.else.FancyTestRunner
+
+function main = |args| {
+  System.exit(reporter(runner(extractor(args: get(0)))))
+}
+----
+
+Since the actions to take are known in advance, it would be desirable to create a dedicated `golo test` command. This command must thus take the three functions as parameters, as well as the starting directory to search for test modules (defaulting to the current one). Two ways to define the functions to use should be possible:
+
+*  using command line options, e.g.:
+[source,bash]
+----
+golo test \
+  --reporter=other.testing.framework.ThePrettyReporter::reporter \
+  --runner=someone.else.FancyTestRunner::runner \
+  --extractor=my.testing.MySuperSuiteExtractor::extractor \
+  src/
+----
+
+* using properties, e.g.:
+[source,bash]
+----
+export GOLO_OPTS='
+-Dgolo.testing.reporter="other.testing.framework.ThePrettyReporter::reporter"
+-Dgolo.testing.runner="someone.else.FancyTestRunner::runner"
+-Dgolo.testing.extractor="my.testing.MySuperSuiteExtractor::extractor"'
+golo test src/
+----
+
+Obviously, these values can be more conveniently defined in a build script (gradle, maven, make, …)
+
+The only task of the `test` command is thus to get the functions (e.g. using `Predefined::fun`) and execute something equivalent to:
+[source,java]
+----
+try {
+    System.exit(reporter.invoke(runner.invoke(extractor.invoke(path))));
+} catch (Throwable t) {
+    // ...
+}
+----
+
+To ease the integration of the command in automated test tools, the command _must_ exit with the number of failed tests as status, as returned by the reporter function.
+
+== Rationale
+
+The main idea is to make each components as loosely coupled as possible. This will allows for alternative implementations and easy integration an reusing of these components.
+
+The runner can be as simple as just calling the test functions in sequence or as elaborated as running all tests in parallel threads for instance.
+
+The reporter can be a polished console output or a JUnit compatible Xml to leverage other tools, that can be used with any other components.
+
