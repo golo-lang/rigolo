@@ -1,9 +1,9 @@
 = API for unified tests in Golo
 
-RiGolo:: NUMBER (to be assigned before merging the proposal)
+RiGolo:: 3
 Title:: API for unified tests in Golo
 Author:: Yannick Loiseau
-Status:: Draft
+Status:: Accepted
 Type:: Standard
 Created:: 2016-12-26
 
@@ -172,6 +172,8 @@ try {
     // ...
 }
 ----
+
+To ease the integration of the command in automated test tools, the command _must_ exit with the number of failed tests as status, as returned by the reporter function.
 
 == Rationale
 
