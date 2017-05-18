@@ -51,7 +51,7 @@ Assertion frameworks must be fully decoupled form the other components, to impro
 === Suites definition and Extractor
 
 A suite definition is a way to obtain a collection of suites to run. 
-An _extractor_ is a function that takes a path where to look for golo test files and returns a collection of suites. Depending of the test framework, the file selection and suites construction can take several forms. This logic is encapsulated in the _extractor_ function.
+An _extractor_ is a function that takes a path-like footnote:[`java.io.File`, `java.nio.file.Path`, `String`,… see `Predefined.pathFrom`] where to look for golo test files and returns a collection of suites. Depending of the test framework, the file selection and suites construction can take several forms. This logic is encapsulated in the _extractor_ function.
 For instance, the _suite definition_ can be made by:
 
 * using a fluent API (see for instance https://github.com/eclipse/golo-lang/pull/308[#308]),
@@ -75,6 +75,8 @@ Depending on the framework, this mean:
 . inspecting the modules to extract the associated suite (via reflexion, generation, invoking a known method, etc.),
 . building a collection of suites
 
+Since the extractor may compile golo modules, its second argument must be a `org.eclipse.golo.compiler.GoloClassLoader`.
+
 All those suite definition methods must be able to be used with the same test runner and reporter, since all they do is to return a collection of suites.
 
 NOTE: Many known test frameworks allow to register methods to be executed before and after each test (a.k.a `setUp` and `tearDown`). It is the responsibility of the suite definition component to provide a way to define such methods, and to ensure that they will be correctly run, for instance by wrapping each test function under the hood. As far as the other components are concerned, a suite is just a bunch of function to run.
@@ -95,8 +97,9 @@ The collection of test results can be a lazy one, such that the test function is
 
 === Reporter
 
-A _reporter_ is a function that takes a collection of suite results, “generate” a report, and returns the number of errors that occurred. Generating a report can mean printing a status on the console or creating a bunch of JUnit compatible Xml files for instance.
+A _reporter_ is a function that takes a collection of suite results, “generate” a report, and returns the number of errors that occurred. Generating a report can mean printing a status on the console or creating a bunch of JUnit compatible Xml files for instance. The reporting function thus takes two arguments: a collection of suite results and a string to specify the output. The semantic of this string depends on the reporter (directory, file, …), with the convention that `"-"` means standard output.
 
+[[packages]]
 === Packages
 
 Should we include one or several alternative implementations for these components in the standard library, the modules must be well organized. The following namespaces are proposed:
@@ -108,7 +111,7 @@ Should we include one or several alternative implementations for these component
 
 For instance, a simple runner module could be located at `gololang.testing.runners.SimpleTestRunner`, a JUnit like reporter at `gololang.testing.reporters.JUnitXmlReporter` and a fluent suite building API at `gololang.testing.suites.DescribeIt`.
 
-Some common utilities could be provided, among others:
+Some common utilities could be provided (e.g. in `gololang.testing.Utils`), among others:
 
 * function to walk the tree of file looking for specific module (can take a filtering function as parameter),
 * function to ease the compilation of a golo file (since this will be done by the extractor),
@@ -134,12 +137,14 @@ import my.testing.MySuperSuiteExtractor
 import other.testing.framework.ThePrettyReporter
 import someone.else.FancyTestRunner
 
+import gololang.testing.Utils
+
 function main = |args| {
-  System.exit(reporter(runner(extractor(args: get(0)))))
+  System.exit(reporter(runner(extractor(args: get(0), currentClassLoader())), "-"))
 }
 ----
 
-Since the actions to take are known in advance, it would be desirable to create a dedicated `golo test` command. This command must thus take the three functions as parameters, as well as the starting directory to search for test modules (defaulting to the current one). Two ways to define the functions to use should be possible:
+Since the actions to take are known in advance, it would be desirable to create a dedicated `golo test` command. This command must thus take the functions as parameters, as well as the starting directory to search for test modules (defaulting to the current one), and the output (defaulting to standard output). Two ways to define the functions to use should be possible:
 
 *  using command line options, e.g.:
 [source,bash]
@@ -147,7 +152,7 @@ Since the actions to take are known in advance, it would be desirable to create 
 golo test \
   --reporter=other.testing.framework.ThePrettyReporter::reporter \
   --runner=someone.else.FancyTestRunner::runner \
-  --extractor=my.testing.MySuperSuiteExtractor::extractor \
+  --extractors=my.testing.MySuperSuiteExtractor::extractor \
   src/
 ----
 
@@ -157,7 +162,7 @@ golo test \
 export GOLO_OPTS='
 -Dgolo.testing.reporter="other.testing.framework.ThePrettyReporter::reporter"
 -Dgolo.testing.runner="someone.else.FancyTestRunner::runner"
--Dgolo.testing.extractor="my.testing.MySuperSuiteExtractor::extractor"'
+-Dgolo.testing.extractors="my.testing.MySuperSuiteExtractor::extractor"'
 golo test src/
 ----
 
@@ -167,13 +172,23 @@ The only task of the `test` command is thus to get the functions (e.g. using `Pr
 [source,java]
 ----
 try {
-    System.exit(reporter.invoke(runner.invoke(extractor.invoke(path))));
+    System.exit(reporter.invoke(runner.invoke(extractor.invoke(path, classLoader)), output));
 } catch (Throwable t) {
     // ...
 }
 ----
 
 To ease the integration of the command in automated test tools, the command _must_ exit with the number of failed tests as status, as returned by the reporter function.
+
+The function specification use the same kind of notations as literal Golo function references, with some additional conventions:
+
+* when just a function name is given, the module is the one described in <<packages,Packages>>,
+* when just a module name is given, the function names will be: `extract`, `run`, and `report`.
+
+For instance, an option `--reporter my.custom.Reporter` will use the function `my.custom.Reporter::report`, and `--reporter simple` will use `gololang.testing.reporters::simple`.
+
+Sensible default runner and reporter functions should be defined as soon as implementations are present in the standard library.
+
 
 == Rationale
 
